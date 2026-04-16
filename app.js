@@ -5,6 +5,15 @@ const API_HEALTH_TIMEOUT_MS = 2500;
 const VIEW_KEYS = ["library", "study", "progress", "studio"];
 const PROGRESS_SECTION_KEYS = ["snapshot", "sync", "reviews"];
 const STUDIO_SECTION_KEYS = ["cards", "decks", "manage"];
+const VERB_PERSON_KEYS = ["ich", "du", "er", "wir", "ihr", "sie"];
+const VERB_PERSON_LABELS = {
+  ich: "ich",
+  du: "du",
+  er: "er/sie/es",
+  wir: "wir",
+  ihr: "ihr",
+  sie: "sie/Sie",
+};
 const CSV_COLUMNS = [
   "deckName",
   "deckLevel",
@@ -17,6 +26,12 @@ const CSV_COLUMNS = [
   "plural",
   "verbAuxiliary",
   "verbPresent",
+  "verbIch",
+  "verbDu",
+  "verbEr",
+  "verbWir",
+  "verbIhr",
+  "verbSie",
   "verbPreterite",
   "verbParticiple",
   "verbImperative",
@@ -1722,16 +1737,20 @@ const seedCards = buildSeedVerbCards("deck-common-verbs-100", [
 function createSeedState() {
   const now = new Date().toISOString();
   return {
-    decks: clone(seedDecks).map((deck) => ({
-      ...deck,
-      createdAt: now,
-      updatedAt: now,
-    })),
-    cards: clone(seedCards).map((card) => ({
-      ...card,
-      createdAt: now,
-      updatedAt: now,
-    })),
+    decks: clone(seedDecks).map((deck) =>
+      normalizeDeckEntry({
+        ...deck,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    ),
+    cards: clone(seedCards).map((card) =>
+      normalizeCardEntry({
+        ...card,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    ),
     progress: {},
     sessions: [],
     preferences: {
@@ -2141,10 +2160,60 @@ function inferPartOfSpeech(card) {
   return "noun";
 }
 
+function parseVerbConjugation(present) {
+  const conjugation = Object.fromEntries(VERB_PERSON_KEYS.map((key) => [key, ""]));
+  const fragments = String(present ?? "")
+    .split(/[·•|]/)
+    .map((fragment) => fragment.trim())
+    .filter(Boolean);
+
+  const prefixes = [
+    { key: "ich", labels: ["ich "] },
+    { key: "du", labels: ["du "] },
+    { key: "er", labels: ["er/sie/es ", "er "] },
+    { key: "wir", labels: ["wir "] },
+    { key: "ihr", labels: ["ihr "] },
+    { key: "sie", labels: ["sie/Sie ", "sie "] },
+  ];
+
+  fragments.forEach((fragment) => {
+    const lowerFragment = fragment.toLowerCase();
+    prefixes.some(({ key, labels }) => {
+      const matchedLabel = labels.find((label) => lowerFragment.startsWith(label.toLowerCase()));
+      if (!matchedLabel) {
+        return false;
+      }
+      conjugation[key] = fragment.slice(matchedLabel.length).trim();
+      return true;
+    });
+  });
+
+  return conjugation;
+}
+
+function normalizeVerbConjugation(conjugation, fallbackPresent = "") {
+  const source = conjugation && typeof conjugation === "object" ? conjugation : {};
+  const parsed = parseVerbConjugation(fallbackPresent);
+  return Object.fromEntries(
+    VERB_PERSON_KEYS.map((key) => [key, String(source[key] ?? parsed[key] ?? "").trim()]),
+  );
+}
+
+function formatVerbConjugation(conjugation) {
+  return VERB_PERSON_KEYS.map((key) => {
+    const value = String(conjugation?.[key] ?? "").trim();
+    return value ? `${VERB_PERSON_LABELS[key]} ${value}` : "";
+  })
+    .filter(Boolean)
+    .join(" · ");
+}
+
 function normalizeVerbForms(forms) {
+  const conjugation = normalizeVerbConjugation(forms?.conjugation, forms?.present);
   return {
     auxiliary: String(forms?.auxiliary ?? "").trim(),
-    present: String(forms?.present ?? "").trim(),
+    present: String(forms?.present ?? "").trim() || formatVerbConjugation(conjugation),
+    conjugation,
     preterite: String(forms?.preterite ?? "").trim(),
     participle: String(forms?.participle ?? "").trim(),
     imperative: String(forms?.imperative ?? "").trim(),
@@ -2169,6 +2238,19 @@ function normalizeCardEntry(card) {
     verbForms: normalizeVerbForms(card?.verbForms),
     adjectiveForms: normalizeAdjectiveForms(card?.adjectiveForms),
   });
+}
+
+function getVerbSearchValues(card) {
+  const verbForms = normalizeVerbForms(card?.verbForms);
+  return [
+    verbForms.auxiliary,
+    verbForms.present,
+    verbForms.preterite,
+    verbForms.participle,
+    verbForms.imperative,
+    verbForms.usagePattern,
+    ...VERB_PERSON_KEYS.map((key) => verbForms.conjugation[key]),
+  ];
 }
 
 function mergeMissingSeedContent(state) {
@@ -2512,7 +2594,12 @@ const elements = {
   cardPlural: document.getElementById("cardPlural"),
   verbFields: document.getElementById("verbFields"),
   cardVerbAuxiliary: document.getElementById("cardVerbAuxiliary"),
-  cardVerbPresent: document.getElementById("cardVerbPresent"),
+  cardVerbIch: document.getElementById("cardVerbIch"),
+  cardVerbDu: document.getElementById("cardVerbDu"),
+  cardVerbEr: document.getElementById("cardVerbEr"),
+  cardVerbWir: document.getElementById("cardVerbWir"),
+  cardVerbIhr: document.getElementById("cardVerbIhr"),
+  cardVerbSie: document.getElementById("cardVerbSie"),
   cardVerbPreterite: document.getElementById("cardVerbPreterite"),
   cardVerbParticiple: document.getElementById("cardVerbParticiple"),
   cardVerbImperative: document.getElementById("cardVerbImperative"),
@@ -3072,19 +3159,40 @@ function renderSpecialForms(card) {
   const adjectiveForms = normalizeAdjectiveForms(card.adjectiveForms);
 
   if (card.partOfSpeech === "verb") {
+    const conjugationFields = VERB_PERSON_KEYS.map((key) => [VERB_PERSON_LABELS[key], verbForms.conjugation[key]]).filter(
+      ([, value]) => value,
+    );
     const verbFields = [
       ["Auxiliary", verbForms.auxiliary],
-      ["Present", verbForms.present],
       ["Simple past", verbForms.preterite],
       ["Past participle", verbForms.participle],
       ["Imperative", verbForms.imperative],
       ["Pattern", card.usagePattern || verbForms.usagePattern],
     ].filter(([, value]) => value);
 
+    if (conjugationFields.length > 0) {
+      blocks.push(`
+        <article class="form-card">
+          <p class="mini-label">Present tense</p>
+          <div class="form-grid">
+            ${conjugationFields
+              .map(
+                ([label, value]) => `
+                  <div class="form-cell">
+                    <span>${label}</span>
+                    <strong>${value}</strong>
+                  </div>`,
+              )
+              .join("")}
+          </div>
+        </article>
+      `);
+    }
+
     if (verbFields.length > 0) {
       blocks.push(`
         <article class="form-card">
-          <p class="mini-label">Tense snapshots</p>
+          <p class="mini-label">Verb details</p>
           <div class="form-grid">
             ${verbFields
               .map(
@@ -3167,7 +3275,7 @@ function applyCardTypeUI() {
       label: "German infinitive",
       placeholder: "umsteigen",
       translation: "to change trains",
-      intro: "Save the base verb plus tense snapshots learners usually memorize together.",
+      intro: "Save the infinitive, full present-tense conjugation, and the key forms learners need most.",
     },
     adjective: {
       label: "German adjective",
@@ -3495,7 +3603,7 @@ function buildPrompt(card, mode) {
         title: card.translation,
         subtitle:
           card.partOfSpeech === "verb"
-            ? "Produce the German infinitive and recall the tense snapshots after reveal."
+            ? "Produce the German infinitive and check the full present-tense conjugation after reveal."
             : card.partOfSpeech === "adjective"
               ? "Produce the German adjective and check the comparison forms after reveal."
               : "Produce the German term and any useful article or pattern.",
@@ -4007,6 +4115,7 @@ function loadCardIntoForm(cardId) {
   }
 
   const verbForms = normalizeVerbForms(card.verbForms);
+  const conjugation = verbForms.conjugation;
   const adjectiveForms = normalizeAdjectiveForms(card.adjectiveForms);
   closeCommandPalette();
   appState.preferences.selectedDeckId = card.deckId;
@@ -4020,7 +4129,12 @@ function loadCardIntoForm(cardId) {
   elements.cardArticle.value = card.article;
   elements.cardPlural.value = card.plural;
   elements.cardVerbAuxiliary.value = verbForms.auxiliary;
-  elements.cardVerbPresent.value = verbForms.present;
+  elements.cardVerbIch.value = conjugation.ich;
+  elements.cardVerbDu.value = conjugation.du;
+  elements.cardVerbEr.value = conjugation.er;
+  elements.cardVerbWir.value = conjugation.wir;
+  elements.cardVerbIhr.value = conjugation.ihr;
+  elements.cardVerbSie.value = conjugation.sie;
   elements.cardVerbPreterite.value = verbForms.preterite;
   elements.cardVerbParticiple.value = verbForms.participle;
   elements.cardVerbImperative.value = verbForms.imperative;
@@ -4097,7 +4211,7 @@ function renderDecks() {
         card.translation,
         card.partOfSpeech,
         card.usagePattern,
-        ...Object.values(card.verbForms ?? {}),
+        ...getVerbSearchValues(card),
         ...Object.values(card.adjectiveForms ?? {}),
         ...card.tags,
       ]),
@@ -4234,7 +4348,7 @@ function renderManager() {
       card.example,
       card.note,
       card.usagePattern,
-      ...Object.values(card.verbForms ?? {}),
+      ...getVerbSearchValues(card),
       ...Object.values(card.adjectiveForms ?? {}),
       ...card.tags,
     ]
@@ -4812,6 +4926,12 @@ function exportCardsToCsv() {
         card.plural,
         verbForms.auxiliary,
         verbForms.present,
+        verbForms.conjugation.ich,
+        verbForms.conjugation.du,
+        verbForms.conjugation.er,
+        verbForms.conjugation.wir,
+        verbForms.conjugation.ihr,
+        verbForms.conjugation.sie,
         verbForms.preterite,
         verbForms.participle,
         verbForms.imperative,
@@ -4983,6 +5103,14 @@ function importCsv(file) {
           verbForms: normalizeVerbForms({
             auxiliary: record.verbAuxiliary,
             present: record.verbPresent,
+            conjugation: {
+              ich: record.verbIch,
+              du: record.verbDu,
+              er: record.verbEr,
+              wir: record.verbWir,
+              ihr: record.verbIhr,
+              sie: record.verbSie,
+            },
             preterite: record.verbPreterite,
             participle: record.verbParticiple,
             imperative: record.verbImperative,
@@ -5656,14 +5784,25 @@ function handleCardFormSubmit(event) {
           : "",
     verbForms:
       partOfSpeech === "verb"
-        ? normalizeVerbForms({
-            auxiliary: elements.cardVerbAuxiliary.value,
-            present: elements.cardVerbPresent.value,
-            preterite: elements.cardVerbPreterite.value,
-            participle: elements.cardVerbParticiple.value,
-            imperative: elements.cardVerbImperative.value,
-            usagePattern: elements.cardUsagePattern.value,
-          })
+        ? (() => {
+            const conjugation = normalizeVerbConjugation({
+              ich: elements.cardVerbIch.value,
+              du: elements.cardVerbDu.value,
+              er: elements.cardVerbEr.value,
+              wir: elements.cardVerbWir.value,
+              ihr: elements.cardVerbIhr.value,
+              sie: elements.cardVerbSie.value,
+            });
+            return normalizeVerbForms({
+              auxiliary: elements.cardVerbAuxiliary.value,
+              present: formatVerbConjugation(conjugation),
+              conjugation,
+              preterite: elements.cardVerbPreterite.value,
+              participle: elements.cardVerbParticiple.value,
+              imperative: elements.cardVerbImperative.value,
+              usagePattern: elements.cardUsagePattern.value,
+            });
+          })()
         : normalizeVerbForms(),
     adjectiveForms:
       partOfSpeech === "adjective"

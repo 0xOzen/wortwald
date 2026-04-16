@@ -1078,6 +1078,12 @@ textarea {
   gap: 12px;
 }
 
+.conjugation-field-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+}
+
 .typed-feedback {
   margin: 0;
   padding: 12px 14px;

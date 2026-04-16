@@ -13,6 +13,7 @@ const JSON_LIMIT_BYTES = 5 * 1024 * 1024;
 const PASSWORD_MIN_LENGTH = 8;
 const SESSION_ACTIVITY_WRITE_MS = 60 * 1000;
 const TOMBSTONE_LIMIT = 500;
+const VERB_PERSON_KEYS = ["ich", "du", "er", "wir", "ihr", "sie"];
 
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
@@ -166,10 +167,68 @@ function inferPartOfSpeech(card) {
   return "noun";
 }
 
+function parseVerbConjugation(present) {
+  const conjugation = Object.fromEntries(VERB_PERSON_KEYS.map((key) => [key, ""]));
+  const fragments = String(present ?? "")
+    .split(/[·•|]/)
+    .map((fragment) => fragment.trim())
+    .filter(Boolean);
+
+  const prefixes = [
+    { key: "ich", labels: ["ich "] },
+    { key: "du", labels: ["du "] },
+    { key: "er", labels: ["er/sie/es ", "er "] },
+    { key: "wir", labels: ["wir "] },
+    { key: "ihr", labels: ["ihr "] },
+    { key: "sie", labels: ["sie/Sie ", "sie "] },
+  ];
+
+  fragments.forEach((fragment) => {
+    const lowerFragment = fragment.toLowerCase();
+    prefixes.some(({ key, labels }) => {
+      const matchedLabel = labels.find((label) => lowerFragment.startsWith(label.toLowerCase()));
+      if (!matchedLabel) {
+        return false;
+      }
+      conjugation[key] = fragment.slice(matchedLabel.length).trim();
+      return true;
+    });
+  });
+
+  return conjugation;
+}
+
+function normalizeVerbConjugation(conjugation, fallbackPresent = "") {
+  const source = conjugation && typeof conjugation === "object" ? conjugation : {};
+  const parsed = parseVerbConjugation(fallbackPresent);
+  return Object.fromEntries(
+    VERB_PERSON_KEYS.map((key) => [key, String(source[key] ?? parsed[key] ?? "").trim()]),
+  );
+}
+
+function formatVerbConjugation(conjugation) {
+  const labels = {
+    ich: "ich",
+    du: "du",
+    er: "er/sie/es",
+    wir: "wir",
+    ihr: "ihr",
+    sie: "sie/Sie",
+  };
+  return VERB_PERSON_KEYS.map((key) => {
+    const value = String(conjugation?.[key] ?? "").trim();
+    return value ? `${labels[key]} ${value}` : "";
+  })
+    .filter(Boolean)
+    .join(" · ");
+}
+
 function normalizeVerbForms(forms) {
+  const conjugation = normalizeVerbConjugation(forms?.conjugation, forms?.present);
   return {
     auxiliary: String(forms?.auxiliary ?? "").trim(),
-    present: String(forms?.present ?? "").trim(),
+    present: String(forms?.present ?? "").trim() || formatVerbConjugation(conjugation),
+    conjugation,
     preterite: String(forms?.preterite ?? "").trim(),
     participle: String(forms?.participle ?? "").trim(),
     imperative: String(forms?.imperative ?? "").trim(),
