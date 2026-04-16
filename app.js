@@ -5,6 +5,11 @@ const API_HEALTH_TIMEOUT_MS = 2500;
 const VIEW_KEYS = ["library", "study", "progress", "studio"];
 const PROGRESS_SECTION_KEYS = ["snapshot", "sync", "reviews"];
 const STUDIO_SECTION_KEYS = ["cards", "decks", "manage"];
+const TARGET_LANGUAGE_KEYS = ["en", "tr"];
+const TARGET_LANGUAGE_LABELS = {
+  en: "English",
+  tr: "Turkish",
+};
 const VERB_PERSON_KEYS = ["ich", "du", "er", "wir", "ihr", "sie"];
 const VERB_PERSON_LABELS = {
   ich: "ich",
@@ -22,6 +27,8 @@ const CSV_COLUMNS = [
   "partOfSpeech",
   "term",
   "translation",
+  "translationEn",
+  "translationTr",
   "article",
   "plural",
   "verbAuxiliary",
@@ -76,6 +83,109 @@ function createSeedTagList(tags, type) {
   return [...new Set([...(Array.isArray(tags) ? tags : []), type])];
 }
 
+const seedVerbTranslationsTr = {
+  sein: "olmak",
+  haben: "sahip olmak",
+  werden: "olmak, dönüşmek",
+  können: "yapabilmek",
+  müssen: "zorunda olmak",
+  wollen: "istemek",
+  sollen: "gerek olmak",
+  dürfen: "izinli olmak, yapabilmek",
+  mögen: "hoşlanmak",
+  machen: "yapmak",
+  sagen: "söylemek",
+  geben: "vermek",
+  kommen: "gelmek",
+  gehen: "gitmek",
+  sehen: "görmek",
+  wissen: "bilmek",
+  kennen: "tanımak, bilmek",
+  nehmen: "almak",
+  finden: "bulmak",
+  bleiben: "kalmak",
+  stehen: "ayakta durmak",
+  liegen: "yatmak, bulunmak",
+  sitzen: "oturmak",
+  heißen: "adı olmak",
+  denken: "düşünmek",
+  glauben: "inanmak, sanmak",
+  meinen: "kastetmek, düşünmek",
+  sprechen: "konuşmak",
+  reden: "konuşmak",
+  fragen: "sormak",
+  antworten: "cevap vermek",
+  hören: "duymak, dinlemek",
+  verstehen: "anlamak",
+  lernen: "öğrenmek, çalışmak",
+  arbeiten: "çalışmak",
+  leben: "yaşamak",
+  wohnen: "ikamet etmek, oturmak",
+  brauchen: "ihtiyaç duymak",
+  kaufen: "satın almak",
+  bezahlen: "ödemek",
+  essen: "yemek yemek",
+  trinken: "içmek",
+  kochen: "yemek pişirmek",
+  schlafen: "uyumak",
+  warten: "beklemek",
+  helfen: "yardım etmek",
+  bringen: "getirmek",
+  holen: "almak, gidip getirmek",
+  schicken: "göndermek",
+  schreiben: "yazmak",
+  lesen: "okumak",
+  fahren: "sürmek, gitmek, seyahat etmek",
+  laufen: "koşmak, yürümek",
+  ankommen: "varmak",
+  anfangen: "başlamak",
+  aufhören: "durmak, bırakmak",
+  erklären: "açıklamak",
+  zeigen: "göstermek",
+  suchen: "aramak",
+  verkaufen: "satmak",
+  bestellen: "sipariş vermek",
+  reservieren: "rezerve etmek",
+  besuchen: "ziyaret etmek",
+  treffen: "buluşmak, karşılaşmak",
+  gefallen: "hoşuna gitmek",
+  benutzen: "kullanmak",
+  tragen: "taşımak, giymek",
+  ziehen: "çekmek, taşınmak",
+  legen: "koymak, yatırmak",
+  stellen: "koymak, yerleştirmek",
+  öffnen: "açmak",
+  schließen: "kapatmak, kilitlemek",
+  putzen: "temizlemek",
+  waschen: "yıkamak",
+  duschen: "duş almak",
+  anrufen: "aramak, telefon etmek",
+  erzählen: "anlatmak",
+  vergessen: "unutmak",
+  verlieren: "kaybetmek",
+  gewinnen: "kazanmak",
+  bekommen: "almak, elde etmek",
+  halten: "tutmak, durmak",
+  lassen: "bırakmak, izin vermek",
+  versuchen: "denemek",
+  entscheiden: "karar vermek",
+  planen: "planlamak",
+  vorbereiten: "hazırlamak",
+  unterschreiben: "imzalamak",
+  wiederholen: "tekrarlamak",
+  wechseln: "değiştirmek",
+  umsteigen: "aktarma yapmak",
+  reisen: "seyahat etmek",
+  mieten: "kiralamak",
+  verdienen: "kazanmak, hak etmek",
+  feiern: "kutlamak",
+  fühlen: "hissetmek",
+  passieren: "olmak, meydana gelmek",
+  spielen: "oynamak",
+  hoffen: "umut etmek",
+  gehören: "ait olmak",
+};
+
 function buildSeedVerbCards(deckId, rows) {
   return rows.map(
     ([
@@ -98,6 +208,8 @@ function buildSeedVerbCards(deckId, rows) {
       deckId,
       term,
       translation,
+      translationEn: translation,
+      translationTr: seedVerbTranslationsTr[term] ?? "",
       article: "",
       plural: "",
       level,
@@ -1757,6 +1869,7 @@ function createSeedState() {
       selectedDeckId: "all",
       dailyGoal: 12,
       deviceName: "My device",
+      targetLanguage: "en",
       activeView: "library",
       progressSection: "snapshot",
       studioSection: "cards",
@@ -2169,6 +2282,45 @@ function inferPartOfSpeech(card) {
   return "noun";
 }
 
+function normalizeTargetLanguage(value) {
+  return TARGET_LANGUAGE_KEYS.includes(value) ? value : "en";
+}
+
+function normalizeTranslations(card) {
+  return {
+    en: String(card?.translationEn ?? card?.translation ?? "").trim(),
+    tr: String(card?.translationTr ?? "").trim(),
+  };
+}
+
+function getActiveTargetLanguage() {
+  return normalizeTargetLanguage(appState?.preferences?.targetLanguage ?? "en");
+}
+
+function getCardTranslations(card) {
+  return normalizeTranslations(card);
+}
+
+function getCardTranslation(card, language = getActiveTargetLanguage()) {
+  const translations = getCardTranslations(card);
+  return translations[language] || translations.en || translations.tr || "";
+}
+
+function getTranslationSearchValues(card) {
+  const translations = getCardTranslations(card);
+  return [translations.en, translations.tr].filter(Boolean);
+}
+
+function getCardSignature(card) {
+  const translations = getCardTranslations(card);
+  return [
+    String(card?.deckId ?? "").trim(),
+    normalizeKey(card?.term ?? ""),
+    normalizeKey(translations.en),
+    normalizeKey(translations.tr),
+  ].join("::");
+}
+
 function parseVerbConjugation(present) {
   const conjugation = Object.fromEntries(VERB_PERSON_KEYS.map((key) => [key, ""]));
   const fragments = String(present ?? "")
@@ -2239,8 +2391,12 @@ function normalizeAdjectiveForms(forms) {
 }
 
 function normalizeCardEntry(card) {
+  const translations = normalizeTranslations(card);
   return withTimestamp({
     ...card,
+    translation: translations.en || translations.tr,
+    translationEn: translations.en,
+    translationTr: translations.tr,
     tags: Array.isArray(card.tags) ? card.tags : splitTagField(card.tags),
     partOfSpeech: inferPartOfSpeech(card),
     usagePattern: String(card?.usagePattern ?? card?.verbForms?.usagePattern ?? "").trim(),
@@ -2341,6 +2497,7 @@ function normalizeState(rawState) {
     preferences: {
       ...seed.preferences,
       ...(rawState?.preferences ?? {}),
+      targetLanguage: normalizeTargetLanguage(rawState?.preferences?.targetLanguage ?? seed.preferences.targetLanguage),
       activeView: normalizeView(rawState?.preferences?.activeView ?? seed.preferences.activeView),
       progressSection: normalizeProgressSection(
         rawState?.preferences?.progressSection ?? seed.preferences.progressSection,
@@ -2462,6 +2619,7 @@ const elements = {
   closeSidebarBtn: document.getElementById("closeSidebarBtn"),
   commandSearchInput: document.getElementById("commandSearchInput"),
   commandResultsPanel: document.getElementById("commandResultsPanel"),
+  targetLanguageButtons: Array.from(document.querySelectorAll("[data-target-language]")),
   viewTabs: Array.from(document.querySelectorAll("[data-view-target]")),
   viewPanels: Array.from(document.querySelectorAll("[data-view-panel]")),
   progressSectionTabs: Array.from(document.querySelectorAll("[data-progress-target]")),
@@ -2599,6 +2757,7 @@ const elements = {
   cardPartOfSpeech: document.getElementById("cardPartOfSpeech"),
   cardTerm: document.getElementById("cardTerm"),
   cardTranslation: document.getElementById("cardTranslation"),
+  cardTranslationTr: document.getElementById("cardTranslationTr"),
   nounFields: document.getElementById("nounFields"),
   cardArticle: document.getElementById("cardArticle"),
   cardPlural: document.getElementById("cardPlural"),
@@ -2778,7 +2937,7 @@ function buildCommandResults(query) {
       }
       const haystack = [
         getCardDisplayTerm(card),
-        card.translation,
+        ...getTranslationSearchValues(card),
         card.example,
         card.note,
         card.usagePattern,
@@ -2793,7 +2952,7 @@ function buildCommandResults(query) {
       id: `card:${card.id}`,
       type: "Card",
       title: getCardDisplayTerm(card),
-      meta: `${getDeckById(card.deckId)?.name ?? "Deck"} · ${card.translation}`,
+      meta: `${getDeckById(card.deckId)?.name ?? "Deck"} · ${getCardTranslation(card)}`,
       run: () => loadCardIntoForm(card.id),
     }));
 
@@ -3022,6 +3181,15 @@ function renderViewNavigation() {
   });
 }
 
+function renderTargetLanguageSwitch() {
+  const activeLanguage = getActiveTargetLanguage();
+  elements.targetLanguageButtons.forEach((button) => {
+    const isActive = button.dataset.targetLanguage === activeLanguage;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
 function renderPanelSectionNavigation() {
   const progressSection = normalizeProgressSection(appState.preferences.progressSection);
   elements.progressSectionTabs.forEach((tab) => {
@@ -3129,6 +3297,18 @@ function setStudioSection(section, options = {}) {
   appState.preferences.studioSection = normalizeStudioSection(section);
   setSectionMenuOpen("studio", false);
   renderPanelSectionNavigation();
+  if (options.persist !== false) {
+    saveState();
+  }
+}
+
+function setTargetLanguage(language, options = {}) {
+  appState.preferences.targetLanguage = normalizeTargetLanguage(language);
+  renderTargetLanguageSwitch();
+  renderDecks();
+  renderManager();
+  renderStudy();
+  renderCommandPalette();
   if (options.persist !== false) {
     saveState();
   }
@@ -3308,14 +3488,24 @@ function applyCardTypeUI() {
 
   const termLabel = elements.cardTerm.closest(".field")?.querySelector("span");
   const translationLabel = elements.cardTranslation.closest(".field")?.querySelector("span");
+  const translationTrLabel = elements.cardTranslationTr.closest(".field")?.querySelector("span");
   if (termLabel) {
     termLabel.textContent = termConfig.label;
   }
   if (translationLabel) {
     translationLabel.textContent = type === "phrase" ? "English meaning" : "English gloss";
   }
+  if (translationTrLabel) {
+    translationTrLabel.textContent = type === "phrase" ? "Turkish meaning" : "Turkish gloss";
+  }
   elements.cardTerm.placeholder = termConfig.placeholder;
   elements.cardTranslation.placeholder = termConfig.translation;
+  elements.cardTranslationTr.placeholder = {
+    noun: "fatura",
+    verb: "aktarma yapmak",
+    adjective: "önemli",
+    phrase: "isterim",
+  }[type] ?? "anlam";
   if (!studioState.editingCardId) {
     elements.cardFormIntro.textContent = termConfig.intro;
   }
@@ -3571,6 +3761,8 @@ function pickMode(card, source = "due") {
 
 function buildPrompt(card, mode) {
   const baseAnswer = getCardDisplayTerm(card);
+  const translation = getCardTranslation(card);
+  const targetLanguageLabel = TARGET_LANGUAGE_LABELS[getActiveTargetLanguage()];
   switch (mode) {
     case "article":
       return {
@@ -3578,7 +3770,7 @@ function buildPrompt(card, mode) {
         title: card.term,
         subtitle: "Recall the correct article before revealing the full answer.",
         answerMain: card.term,
-        translation: card.translation,
+        translation,
       };
     case "cloze": {
       const hiddenTerm = card.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -3588,7 +3780,7 @@ function buildPrompt(card, mode) {
         title: sentence,
         subtitle: "Fill the gap and say the base German term aloud.",
         answerMain: baseAnswer,
-        translation: card.translation,
+        translation,
       };
     }
     case "listening":
@@ -3597,20 +3789,20 @@ function buildPrompt(card, mode) {
         title: "Listen to the German prompt and type what you hear.",
         subtitle: "Use Play prompt if you need another pass before checking.",
         answerMain: baseAnswer,
-        translation: card.translation,
+        translation,
       };
     case "reverse":
       return {
         badge: "Reverse",
         title: card.term,
-        subtitle: "Say the meaning in English before you peek.",
+        subtitle: `Say the meaning in ${targetLanguageLabel} before you peek.`,
         answerMain: card.term,
-        translation: card.translation,
+        translation,
       };
     default:
       return {
         badge: "Translation",
-        title: card.translation,
+        title: translation,
         subtitle:
           card.partOfSpeech === "verb"
             ? "Produce the German infinitive and check the full present-tense conjugation after reveal."
@@ -3618,7 +3810,7 @@ function buildPrompt(card, mode) {
               ? "Produce the German adjective and check the comparison forms after reveal."
               : "Produce the German term and any useful article or pattern.",
         answerMain: baseAnswer,
-        translation: card.translation,
+        translation,
       };
   }
 }
@@ -3628,7 +3820,7 @@ function getTypedAnswerLabel(mode) {
     return "Type the article or the full noun";
   }
   if (mode === "reverse") {
-    return "Type the English meaning";
+    return `Type the ${TARGET_LANGUAGE_LABELS[getActiveTargetLanguage()]} meaning`;
   }
   if (mode === "listening") {
     return "Type the German you hear";
@@ -3646,7 +3838,7 @@ function getExpectedAnswers(card, mode) {
   }
 
   if (mode === "reverse") {
-    const translations = String(card.translation)
+    const translations = String(getCardTranslation(card))
       .split(",")
       .map((entry) => entry.trim())
       .filter(Boolean);
@@ -4135,7 +4327,8 @@ function loadCardIntoForm(cardId) {
   elements.cardDeckSelect.value = card.deckId;
   elements.cardPartOfSpeech.value = card.partOfSpeech;
   elements.cardTerm.value = card.term;
-  elements.cardTranslation.value = card.translation;
+  elements.cardTranslation.value = card.translationEn || card.translation || "";
+  elements.cardTranslationTr.value = card.translationTr || "";
   elements.cardArticle.value = card.article;
   elements.cardPlural.value = card.plural;
   elements.cardVerbAuxiliary.value = verbForms.auxiliary;
@@ -4218,7 +4411,7 @@ function renderDecks() {
       deck.description,
       ...cards.flatMap((card) => [
         card.term,
-        card.translation,
+        ...getTranslationSearchValues(card),
         card.partOfSpeech,
         card.usagePattern,
         ...getVerbSearchValues(card),
@@ -4354,7 +4547,7 @@ function renderManager() {
     const progress = getProgress(card.id);
     const haystack = [
       getCardDisplayTerm(card),
-      card.translation,
+      ...getTranslationSearchValues(card),
       card.example,
       card.note,
       card.usagePattern,
@@ -4481,7 +4674,7 @@ function renderManager() {
             <div class="managed-card-top">
               <div>
                 <h4>${fullTerm}</h4>
-                <p>${card.translation}</p>
+                <p>${getCardTranslation(card)}</p>
               </div>
               ${getManagedCardActionButtons(card.id, "managed-card-actions-inline")}
             </div>
@@ -4720,6 +4913,7 @@ function renderInsights() {
 
 function render() {
   applyCardTypeUI();
+  renderTargetLanguageSwitch();
   renderDeckSelects();
   renderDecks();
   renderManager();
@@ -4932,6 +5126,8 @@ function exportCardsToCsv() {
         card.partOfSpeech,
         card.term,
         card.translation,
+        card.translationEn,
+        card.translationTr,
         card.article,
         card.plural,
         verbForms.auxiliary,
@@ -5043,8 +5239,12 @@ function importCsv(file) {
 
       const headers = rows[0].map((value) => value.trim().replace(/^\uFEFF/, ""));
       const headerLookup = new Map(headers.map((header, index) => [header, index]));
-      if (!headerLookup.has("deckName") || !headerLookup.has("term") || !headerLookup.has("translation")) {
-        throw new Error("CSV must include deckName, term, and translation columns.");
+      if (
+        !headerLookup.has("deckName")
+        || !headerLookup.has("term")
+        || (!headerLookup.has("translation") && !headerLookup.has("translationEn") && !headerLookup.has("translationTr"))
+      ) {
+        throw new Error("CSV must include deckName, term, and at least one translation column.");
       }
 
       const deckNameToId = new Map(appState.decks.map((deck) => [normalizeKey(deck.name), deck.id]));
@@ -5057,7 +5257,9 @@ function importCsv(file) {
           headers.map((header, index) => [header, String(cells[index] ?? "").trim()]),
         );
 
-        if (!record.term || !record.translation || !record.deckName) {
+        const translationEn = record.translationEn || record.translation || "";
+        const translationTr = record.translationTr || "";
+        if (!record.term || (!translationEn && !translationTr) || !record.deckName) {
           skippedRows += 1;
           return;
         }
@@ -5089,10 +5291,12 @@ function importCsv(file) {
             : rawTerm.trim();
 
         const duplicate = appState.cards.some(
-          (card) =>
-            card.deckId === deckId &&
-            normalizeKey(card.term) === normalizeKey(normalizedTerm) &&
-            normalizeKey(card.translation) === normalizeKey(record.translation),
+          (card) => getCardSignature({ ...card, deckId }) === getCardSignature({
+            deckId,
+            term: normalizedTerm,
+            translationEn,
+            translationTr,
+          }),
         );
         if (duplicate) {
           skippedRows += 1;
@@ -5105,7 +5309,9 @@ function importCsv(file) {
           id: createId("card"),
           deckId,
           term: normalizedTerm,
-          translation: record.translation,
+          translation: translationEn || translationTr,
+          translationEn,
+          translationTr,
           article,
           plural: record.plural || "",
           partOfSpeech,
@@ -5258,15 +5464,13 @@ function mergeSyncState(importedRaw) {
     deckIdRemap.set(deck.id, existingDeck.id);
   });
 
-  const cardSignatureMap = new Map(
-    local.cards.map((card) => [`${card.deckId}::${normalizeKey(card.term)}::${normalizeKey(card.translation)}`, card.id]),
-  );
+  const cardSignatureMap = new Map(local.cards.map((card) => [getCardSignature(card), card.id]));
   const cardIdRemap = new Map();
 
   incoming.cards.forEach((card) => {
     const mappedDeckId = deckIdRemap.get(card.deckId) ?? card.deckId;
     const candidateCard = { ...card, deckId: mappedDeckId };
-    const signature = `${mappedDeckId}::${normalizeKey(candidateCard.term)}::${normalizeKey(candidateCard.translation)}`;
+    const signature = getCardSignature(candidateCard);
     const existingCard =
       local.cards.find((entry) => entry.id === candidateCard.id) ??
       local.cards.find((entry) => entry.id === cardSignatureMap.get(signature));
@@ -5788,7 +5992,10 @@ function handleCardFormSubmit(event) {
     deckId: elements.cardDeckSelect.value,
     partOfSpeech,
     term: normalizedTerm,
-    translation: elements.cardTranslation.value.trim(),
+    translation:
+      elements.cardTranslation.value.trim() || elements.cardTranslationTr.value.trim(),
+    translationEn: elements.cardTranslation.value.trim(),
+    translationTr: elements.cardTranslationTr.value.trim(),
     article: partOfSpeech === "noun" ? article : "",
     plural: partOfSpeech === "noun" ? elements.cardPlural.value.trim() : "",
     usagePattern:
@@ -5839,7 +6046,7 @@ function handleCardFormSubmit(event) {
     updatedAt: timestamp,
   };
 
-  if (!card.term || !card.translation || !card.deckId) {
+  if (!card.term || (!card.translationEn && !card.translationTr) || !card.deckId) {
     return;
   }
 
@@ -5954,6 +6161,11 @@ elements.searchInput.addEventListener("input", renderDecks);
 elements.levelFilter.addEventListener("change", renderDecks);
 elements.managerSearchInput.addEventListener("input", renderManager);
 elements.managerFilter.addEventListener("change", renderManager);
+elements.targetLanguageButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setTargetLanguage(button.dataset.targetLanguage);
+  });
+});
 elements.openCardSheetBtn.addEventListener("click", () => openCardSheet({ section: "cards" }));
 elements.openDeckSheetBtn.addEventListener("click", () => openDeckSheet({ section: "decks" }));
 elements.openCardSheetFromManagerBtn.addEventListener("click", () => openCardSheet({ section: "manage" }));

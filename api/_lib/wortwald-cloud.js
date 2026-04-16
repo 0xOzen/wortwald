@@ -6,6 +6,7 @@ const JSON_LIMIT_BYTES = 5 * 1024 * 1024;
 const PASSWORD_MIN_LENGTH = 8;
 const SESSION_ACTIVITY_WRITE_MS = 60 * 1000;
 const TOMBSTONE_LIMIT = 500;
+const TARGET_LANGUAGE_KEYS = ["en", "tr"];
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is required for the hosted Wortwald API.");
@@ -25,6 +26,7 @@ function createEmptyState() {
       selectedDeckId: "all",
       dailyGoal: 12,
       deviceName: "My device",
+      targetLanguage: "en",
     },
     tombstones: {
       decks: [],
@@ -80,6 +82,10 @@ function normalizeKey(value) {
   return String(value ?? "")
     .trim()
     .toLowerCase();
+}
+
+function normalizeTargetLanguage(value) {
+  return TARGET_LANGUAGE_KEYS.includes(value) ? value : "en";
 }
 
 function splitTagField(value) {
@@ -144,6 +150,13 @@ function inferPartOfSpeech(card) {
   return "noun";
 }
 
+function normalizeTranslations(card) {
+  return {
+    en: String(card?.translationEn ?? card?.translation ?? "").trim(),
+    tr: String(card?.translationTr ?? "").trim(),
+  };
+}
+
 function normalizeVerbForms(forms) {
   return {
     auxiliary: String(forms?.auxiliary ?? "").trim(),
@@ -164,12 +177,15 @@ function normalizeAdjectiveForms(forms) {
 }
 
 function normalizeCardEntry(card) {
+  const translations = normalizeTranslations(card);
   return withTimestamp({
     id: String(card?.id ?? "").trim(),
     deckId: String(card?.deckId ?? "").trim(),
     partOfSpeech: inferPartOfSpeech(card),
     term: String(card?.term ?? "").trim(),
-    translation: String(card?.translation ?? "").trim(),
+    translation: translations.en || translations.tr,
+    translationEn: translations.en,
+    translationTr: translations.tr,
     article: String(card?.article ?? "").trim(),
     plural: String(card?.plural ?? "").trim(),
     usagePattern: String(card?.usagePattern ?? card?.verbForms?.usagePattern ?? "").trim(),
@@ -229,6 +245,7 @@ function normalizeState(rawState) {
       ...empty.preferences,
       ...(rawState?.preferences ?? {}),
       dailyGoal: Math.min(100, Math.max(1, Number(rawState?.preferences?.dailyGoal ?? empty.preferences.dailyGoal) || 12)),
+      targetLanguage: normalizeTargetLanguage(rawState?.preferences?.targetLanguage ?? empty.preferences.targetLanguage),
     },
     tombstones: {
       decks: normalizeTombstoneList(rawState?.tombstones?.decks),

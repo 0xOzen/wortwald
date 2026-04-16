@@ -148,6 +148,22 @@
             <div id="commandResultsPanel" class="command-results hidden"></div>
           </div>
           <div class="topbar-actions">
+            <div class="target-language-switch" role="group" aria-label="Target language">
+              <button
+                class="target-language-button is-active"
+                type="button"
+                data-target-language="en"
+              >
+                EN
+              </button>
+              <button
+                class="target-language-button"
+                type="button"
+                data-target-language="tr"
+              >
+                TR
+              </button>
+            </div>
             <button
               id="topbarAccountBtn"
               class="button button-secondary topbar-action topbar-account-action"
@@ -798,7 +814,14 @@
 
             <label class="field">
               <span>English meaning</span>
-              <input id="cardTranslation" type="text" placeholder="bill, invoice" required />
+              <input id="cardTranslation" type="text" placeholder="bill, invoice" />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Turkish meaning</span>
+              <input id="cardTranslationTr" type="text" placeholder="fatura" />
             </label>
           </div>
 

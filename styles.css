@@ -231,6 +231,44 @@ textarea {
   margin-left: auto;
 }
 
+.target-language-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(17, 18, 24, 0.05);
+  border: 1px solid rgba(17, 18, 24, 0.06);
+}
+
+.target-language-button {
+  min-width: 44px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.target-language-button:hover {
+  transform: translateY(-1px);
+}
+
+.target-language-button.is-active {
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text);
+  box-shadow: 0 6px 14px rgba(17, 18, 24, 0.08);
+}
+
 .topbar-account-action[data-state="checking"],
 .topbar-account-action[data-state="offline"] {
   background: rgba(17, 18, 24, 0.05);
@@ -1635,6 +1673,7 @@ textarea {
   .topbar-actions {
     width: 100%;
     justify-content: flex-end;
+    flex-wrap: wrap;
   }
 
   .topbar-action {
