@@ -267,14 +267,6 @@
                     placeholder="Type what you think the answer is"
                   ></textarea>
                 </label>
-                <div class="typed-actions">
-                  <button id="checkAnswerBtn" class="button button-primary" type="button">
-                    Check answer
-                  </button>
-                  <button id="revealBtn" class="button button-secondary" type="button">
-                    Reveal answer
-                  </button>
-                </div>
                 <p id="typedFeedbackText" class="typed-feedback hidden"></p>
               </div>
 
@@ -296,21 +288,21 @@
                       coffee
                     </p>
                   </div>
-                <div class="answer-pills">
-                  <span id="posPill" class="pill hidden"></span>
-                  <span id="articlePill" class="pill hidden"></span>
-                  <span id="pluralPill" class="pill hidden"></span>
-                  <span id="levelPill" class="pill hidden"></span>
+                  <div class="answer-pills">
+                    <span id="posPill" class="pill hidden"></span>
+                    <span id="articlePill" class="pill hidden"></span>
+                    <span id="pluralPill" class="pill hidden"></span>
+                    <span id="levelPill" class="pill hidden"></span>
+                  </div>
                 </div>
-              </div>
 
-              <p id="noteText" class="note-text hidden"></p>
+                <p id="noteText" class="note-text hidden"></p>
 
-              <div id="specialFormsPanel" class="special-forms hidden"></div>
+                <div id="specialFormsPanel" class="special-forms hidden"></div>
 
-              <div class="example-box">
-                <p id="exampleText" class="example-line"></p>
-                <p id="exampleTranslation" class="example-translation"></p>
+                <div class="example-box">
+                  <p id="exampleText" class="example-line"></p>
+                  <p id="exampleTranslation" class="example-translation"></p>
                 </div>
 
                 <div class="study-stats">
@@ -327,8 +319,21 @@
                     <strong id="studyNextGoodText">Tomorrow</strong>
                   </article>
                 </div>
+              </div>
 
-                <div class="rating-row">
+              <div id="studyActionDock" class="study-action-dock">
+                <p id="studyActionHint" class="study-action-hint">
+                  Keep your thumb here for reveal and quick checks.
+                </p>
+                <div id="typedActions" class="typed-actions">
+                  <button id="checkAnswerBtn" class="button button-primary" type="button">
+                    Check answer
+                  </button>
+                  <button id="revealBtn" class="button button-secondary" type="button">
+                    Reveal answer
+                  </button>
+                </div>
+                <div id="ratingRow" class="rating-row hidden">
                   <button class="rating-button rating-again" data-score="again">
                     Again
                   </button>
@@ -342,13 +347,13 @@
                     Easy
                   </button>
                 </div>
-
-                <p class="hint">
-                  Keyboard: <strong>Space</strong> reveals the answer.
-                  <strong>1</strong>, <strong>2</strong>, <strong>3</strong>,
-                  <strong>4</strong> rate the card.
-                </p>
               </div>
+
+              <p class="hint">
+                Keyboard: <strong>Space</strong> reveals the answer.
+                <strong>1</strong>, <strong>2</strong>, <strong>3</strong>,
+                <strong>4</strong> rate the card.
+              </p>
             </article>
           </div>
         </section>

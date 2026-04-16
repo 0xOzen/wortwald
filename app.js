@@ -2665,10 +2665,14 @@ const elements = {
   promptSubtitle: document.getElementById("promptSubtitle"),
   typedAnswerLabel: document.getElementById("typedAnswerLabel"),
   typedAnswerInput: document.getElementById("typedAnswerInput"),
+  typedActions: document.getElementById("typedActions"),
   checkAnswerBtn: document.getElementById("checkAnswerBtn"),
   typedFeedbackText: document.getElementById("typedFeedbackText"),
   revealBtn: document.getElementById("revealBtn"),
   answerPanel: document.getElementById("answerPanel"),
+  studyActionDock: document.getElementById("studyActionDock"),
+  studyActionHint: document.getElementById("studyActionHint"),
+  ratingRow: document.getElementById("ratingRow"),
   answerMain: document.getElementById("answerMain"),
   translationText: document.getElementById("translationText"),
   posPill: document.getElementById("posPill"),
@@ -4803,7 +4807,12 @@ function renderStudy() {
   });
 
   elements.answerPanel.classList.toggle("hidden", !sessionState.revealed);
+  elements.typedActions.classList.toggle("hidden", sessionState.revealed);
+  elements.ratingRow.classList.toggle("hidden", !sessionState.revealed);
   elements.revealBtn.classList.toggle("hidden", sessionState.revealed);
+  elements.studyActionHint.textContent = sessionState.revealed
+    ? "Rate this card while the answer is still fresh."
+    : "Keep your thumb here for reveal and quick checks.";
   elements.studyArea.classList.remove("hidden");
   elements.studyEmpty.classList.add("hidden");
 

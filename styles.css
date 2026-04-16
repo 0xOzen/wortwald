@@ -1194,6 +1194,19 @@ textarea {
   border-top: 1px solid var(--line);
 }
 
+.study-action-dock {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.study-action-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 .answer-label {
   margin-bottom: 6px;
 }
@@ -1706,6 +1719,10 @@ textarea {
     width: 100%;
   }
 
+  .study-card {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+
   .settings-form,
   .studio-actions,
   .composer-actions,
@@ -1770,5 +1787,37 @@ textarea {
 
   .managed-card-actions-inline {
     display: none;
+  }
+
+  .study-action-dock {
+    position: sticky;
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    z-index: 8;
+    margin-top: 18px;
+    padding: 12px;
+    border-radius: 22px;
+    border: 1px solid rgba(17, 18, 24, 0.08);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(18px) saturate(1.12);
+    box-shadow: 0 12px 30px rgba(17, 18, 24, 0.12);
+  }
+
+  .study-action-hint {
+    font-size: 0.82rem;
+    letter-spacing: 0.01em;
+  }
+
+  .study-action-dock .typed-actions,
+  .study-action-dock .rating-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 0;
+  }
+
+  .study-action-dock .button,
+  .study-action-dock .rating-button {
+    min-height: 56px;
+    border-radius: 18px;
   }
 }
