@@ -1894,8 +1894,11 @@ function renderAuth() {
   elements.deviceNameInput.disabled = busy || !backendReady;
   elements.registerBtn.disabled = busy || !backendReady;
   elements.loginBtn.disabled = busy || !backendReady;
+  elements.topbarAccountBtn.disabled = busy;
 
   if (!backendState.checked) {
+    elements.topbarAccountBtn.textContent = "Checking sync";
+    elements.topbarAccountBtn.dataset.state = "checking";
     elements.accountEmailText.textContent = "";
     elements.accountMetaText.textContent = "Checking cloud sync availability.";
     elements.syncNowBtn.disabled = true;
@@ -1913,6 +1916,8 @@ function renderAuth() {
   }
 
   if (!backendState.available) {
+    elements.topbarAccountBtn.textContent = "Offline only";
+    elements.topbarAccountBtn.dataset.state = "offline";
     elements.accountEmailText.textContent = "";
     elements.accountMetaText.textContent = "Hosted PWA mode keeps your study data on this device.";
     elements.syncNowBtn.disabled = true;
@@ -1932,6 +1937,8 @@ function renderAuth() {
   }
 
   if (!loggedIn) {
+    elements.topbarAccountBtn.textContent = "Sign in";
+    elements.topbarAccountBtn.dataset.state = "signed-out";
     elements.accountEmailText.textContent = "";
     elements.accountMetaText.textContent = "Server-backed sync is ready.";
     elements.syncNowBtn.disabled = true;
@@ -1946,6 +1953,8 @@ function renderAuth() {
     return;
   }
 
+  elements.topbarAccountBtn.textContent = "Account";
+  elements.topbarAccountBtn.dataset.state = "signed-in";
   const currentSession = authState.sessions.find((entry) => entry.id === authState.currentSessionId);
   elements.accountEmailText.textContent = authState.account.email;
   elements.accountMetaText.textContent = authState.lastSyncedAt
@@ -2485,6 +2494,7 @@ const elements = {
   studyMixedBtn: document.getElementById("studyMixedBtn"),
   studyWeakBtn: document.getElementById("studyWeakBtn"),
   studyListeningBtn: document.getElementById("studyListeningBtn"),
+  topbarAccountBtn: document.getElementById("topbarAccountBtn"),
   topbarStudyBtn: document.getElementById("topbarStudyBtn"),
   installBtn: document.getElementById("installBtn"),
   installStatusText: document.getElementById("installStatusText"),
@@ -5726,6 +5736,11 @@ async function triggerInstall() {
   elements.installBtn.classList.add("hidden");
 }
 
+function openAccountSync() {
+  setActiveView("progress", { persist: false });
+  setProgressSection("sync");
+}
+
 function handleDeckFormSubmit(event) {
   event.preventDefault();
   const timestamp = new Date().toISOString();
@@ -5965,6 +5980,7 @@ elements.registerBtn.addEventListener("click", () => {
 elements.loginBtn.addEventListener("click", () => {
   loginAccount().catch((error) => setAuthStatus(error.message));
 });
+elements.topbarAccountBtn.addEventListener("click", openAccountSync);
 elements.syncNowBtn.addEventListener("click", () => {
   syncAccountState().catch((error) => setAuthStatus(error.message));
 });

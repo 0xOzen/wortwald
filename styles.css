@@ -224,6 +224,29 @@ textarea {
   white-space: nowrap;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.topbar-account-action[data-state="checking"],
+.topbar-account-action[data-state="offline"] {
+  background: rgba(17, 18, 24, 0.05);
+  color: var(--text-soft);
+}
+
+.topbar-account-action[data-state="signed-out"] {
+  background: rgba(10, 132, 255, 0.1);
+  color: var(--accent-strong);
+}
+
+.topbar-account-action[data-state="signed-in"] {
+  background: rgba(31, 157, 107, 0.12);
+  color: var(--success);
+}
+
 .command-bar {
   position: relative;
   min-width: min(380px, 100%);
@@ -1607,6 +1630,11 @@ textarea {
   .command-bar {
     order: 3;
     min-width: 100%;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .topbar-action {
