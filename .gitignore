@@ -1,0 +1,7 @@
+.vercel
+.env*.local
+node_modules
+.playwright-cli
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal

@@ -1,0 +1,9 @@
+{
+  "name": "wortwald",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Wortwald German flashcards with hosted sync on Vercel.",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2"
+  }
+}

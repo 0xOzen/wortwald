@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Wortwald is an offline-friendly German flashcard studio for nouns, verbs, adjectives, tense snapshots, spaced repetition, and custom deck authoring."
+    />
+    <meta name="theme-color" content="#f2f2f7" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Wortwald" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Wortwald | German Flashcards</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+    <div class="app-shell">
+      <aside id="appSidebar" class="app-sidebar" aria-label="Primary sections">
+        <div class="sidebar-surface">
+          <div class="sidebar-head">
+            <div class="brand-row sidebar-brand-row">
+              <span class="brand-mark">Wortwald</span>
+              <span class="brand-sub">German flashcard studio</span>
+            </div>
+            <button
+              id="closeSidebarBtn"
+              class="icon-button sidebar-close"
+              type="button"
+              aria-label="Close navigation"
+            >
+              Close
+            </button>
+          </div>
+
+          <section class="sidebar-section">
+            <p class="sidebar-label">Navigate</p>
+            <nav class="view-nav" aria-label="Primary sections">
+              <button class="view-tab is-active" type="button" data-view-target="library">
+                <span class="view-tab-label">Library</span>
+                <span id="libraryNavMeta" class="view-tab-meta">Browse decks and pick a focus.</span>
+              </button>
+              <button class="view-tab" type="button" data-view-target="study">
+                <span class="view-tab-label">Study</span>
+                <span id="studyNavMeta" class="view-tab-meta">Run due, mixed, weak, or listening drills.</span>
+              </button>
+              <button class="view-tab" type="button" data-view-target="progress">
+                <span class="view-tab-label">Progress</span>
+                <span id="progressNavMeta" class="view-tab-meta">Track streaks, weak spots, and sync.</span>
+              </button>
+              <button class="view-tab" type="button" data-view-target="studio">
+                <span class="view-tab-label">Studio</span>
+                <span id="studioNavMeta" class="view-tab-meta">Create decks, cards, and edit your collection.</span>
+              </button>
+            </nav>
+          </section>
+
+          <section class="sidebar-section">
+            <div class="sidebar-section-head">
+              <p class="sidebar-label">Start review</p>
+              <span class="sidebar-caption">Open the queue you need right now.</span>
+            </div>
+            <div class="sidebar-actions">
+              <button id="studyDueBtn" class="button button-primary" type="button">
+                Study due cards
+              </button>
+              <button id="studyMixedBtn" class="button button-secondary" type="button">
+                Mix all decks
+              </button>
+              <button id="studyWeakBtn" class="button button-ghost" type="button">
+                Study weak cards
+              </button>
+              <button id="studyListeningBtn" class="button button-ghost" type="button">
+                Listening mix
+              </button>
+            </div>
+          </section>
+
+          <section class="sidebar-section">
+            <div class="sidebar-section-head">
+              <p class="sidebar-label">Snapshot</p>
+              <span class="sidebar-caption">Today at a glance.</span>
+            </div>
+            <div class="stat-burst sidebar-stats">
+              <article class="stat-card">
+                <span class="stat-value" id="dueCount">0</span>
+                <span class="stat-label">Due now</span>
+              </article>
+              <article class="stat-card">
+                <span class="stat-value" id="todayReviews">0</span>
+                <span class="stat-label">Reviewed today</span>
+              </article>
+              <article class="stat-card">
+                <span class="stat-value" id="streakCount">0</span>
+                <span class="stat-label">Day streak</span>
+              </article>
+              <article class="stat-card">
+                <span class="stat-value" id="masteredCount">0</span>
+                <span class="stat-label">Mastered cards</span>
+              </article>
+            </div>
+          </section>
+
+          <section class="sidebar-section sidebar-support">
+            <button id="installBtn" class="button button-ghost hidden" type="button">
+              Install app
+            </button>
+            <p id="installStatusText" class="install-note">
+              Install support appears when this app is served over localhost or HTTPS.
+            </p>
+          </section>
+        </div>
+      </aside>
+
+      <div class="app-content">
+        <header class="topbar">
+          <button
+            id="menuToggleBtn"
+            class="icon-button menu-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="appSidebar"
+            aria-label="Open navigation"
+          >
+            Menu
+          </button>
+          <div class="topbar-copy">
+            <p class="topbar-kicker">Wortwald</p>
+            <h1 id="activeViewTitle">Library</h1>
+            <p id="activeViewMeta" class="topbar-meta">Browse decks and pick a focus.</p>
+          </div>
+          <div class="command-bar">
+            <label class="command-field" for="commandSearchInput">
+              <input
+                id="commandSearchInput"
+                type="search"
+                placeholder="Jump to a deck, card, or action"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <span class="command-shortcut">/</span>
+            </label>
+            <div id="commandResultsPanel" class="command-results hidden"></div>
+          </div>
+          <button id="topbarStudyBtn" class="button button-primary topbar-action" type="button">
+            Study due
+          </button>
+        </header>
+
+        <main class="main-grid">
+          <section class="panel panel-decks" data-view-panel="library">
+          <div class="panel-head">
+            <div>
+              <p class="kicker">Library</p>
+              <h2>Decks</h2>
+            </div>
+            <div class="filters">
+              <label class="field compact-field">
+                <span>Search</span>
+                <input
+                  id="searchInput"
+                  type="search"
+                  placeholder="cafe, travel, article..."
+                />
+              </label>
+              <label class="field compact-field">
+                <span>Level</span>
+                <select id="levelFilter">
+                  <option value="all">All levels</option>
+                  <option value="A1">A1</option>
+                  <option value="A2">A2</option>
+                  <option value="B1">B1</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div id="deckGrid" class="deck-grid"></div>
+        </section>
+
+        <section class="panel panel-study hidden" data-view-panel="study">
+          <div class="panel-head">
+            <div>
+              <p class="kicker">Console</p>
+              <h2>Study Session</h2>
+            </div>
+            <div class="session-meta" id="sessionStatus">
+              Select a deck or start a mixed review.
+            </div>
+          </div>
+
+          <div id="studyEmpty" class="empty-state">
+            <p class="empty-title">No active session yet</p>
+            <p class="empty-copy">
+              Start with due cards for a focused review or mix everything for a
+              broader session.
+            </p>
+          </div>
+
+          <div id="studyArea" class="study-area hidden">
+            <div class="study-toolbar">
+              <span class="queue-chip" id="queueChip">0 / 0</span>
+              <div class="toolbar-actions">
+                <button id="pronounceBtn" class="button button-ghost">
+                  Play prompt
+                </button>
+                <button id="recordBtn" class="button button-ghost">
+                  Start recording
+                </button>
+                <button id="stopRecordBtn" class="button button-ghost hidden">
+                  Stop
+                </button>
+                <button id="playRecordBtn" class="button button-ghost">
+                  Play take
+                </button>
+                <button id="requeueBtn" class="button button-ghost">
+                  New queue
+                </button>
+              </div>
+            </div>
+
+            <article class="study-card">
+              <div class="prompt-wrap">
+                <span id="modeBadge" class="mode-badge">Translation</span>
+                <h3 id="promptTitle">Prompt title</h3>
+                <p id="promptSubtitle" class="prompt-subtitle">
+                  Prompt subtitle
+                </p>
+              </div>
+
+              <div class="typed-answer-panel">
+                <label class="field">
+                  <span id="typedAnswerLabel">Type your answer</span>
+                  <textarea
+                    id="typedAnswerInput"
+                    rows="2"
+                    placeholder="Type what you think the answer is"
+                  ></textarea>
+                </label>
+                <div class="typed-actions">
+                  <button id="checkAnswerBtn" class="button button-primary" type="button">
+                    Check answer
+                  </button>
+                  <button id="revealBtn" class="button button-secondary" type="button">
+                    Reveal answer
+                  </button>
+                </div>
+                <p id="typedFeedbackText" class="typed-feedback hidden"></p>
+              </div>
+
+              <div class="recording-panel">
+                <div class="recording-head">
+                  <strong>Speaking practice</strong>
+                  <span id="recordingStatusText" class="recording-status">
+                    Record yourself answering and compare it to the prompt audio.
+                  </span>
+                </div>
+              </div>
+
+              <div id="answerPanel" class="answer-panel hidden">
+                <div class="answer-head">
+                  <div>
+                    <p class="answer-label">Answer</p>
+                    <h4 id="answerMain">der Kaffee</h4>
+                    <p id="translationText" class="translation-text">
+                      coffee
+                    </p>
+                  </div>
+                <div class="answer-pills">
+                  <span id="posPill" class="pill hidden"></span>
+                  <span id="articlePill" class="pill hidden"></span>
+                  <span id="pluralPill" class="pill hidden"></span>
+                  <span id="levelPill" class="pill hidden"></span>
+                </div>
+              </div>
+
+              <p id="noteText" class="note-text hidden"></p>
+
+              <div id="specialFormsPanel" class="special-forms hidden"></div>
+
+              <div class="example-box">
+                <p id="exampleText" class="example-line"></p>
+                <p id="exampleTranslation" class="example-translation"></p>
+                </div>
+
+                <div class="study-stats">
+                  <article class="mini-panel study-mini-panel">
+                    <p class="mini-label">Repetitions</p>
+                    <strong id="studyRepText">0</strong>
+                  </article>
+                  <article class="mini-panel study-mini-panel">
+                    <p class="mini-label">Current interval</p>
+                    <strong id="studyIntervalText">New card</strong>
+                  </article>
+                  <article class="mini-panel study-mini-panel">
+                    <p class="mini-label">Next review if good</p>
+                    <strong id="studyNextGoodText">Tomorrow</strong>
+                  </article>
+                </div>
+
+                <div class="rating-row">
+                  <button class="rating-button rating-again" data-score="again">
+                    Again
+                  </button>
+                  <button class="rating-button rating-hard" data-score="hard">
+                    Hard
+                  </button>
+                  <button class="rating-button rating-good" data-score="good">
+                    Good
+                  </button>
+                  <button class="rating-button rating-easy" data-score="easy">
+                    Easy
+                  </button>
+                </div>
+
+                <p class="hint">
+                  Keyboard: <strong>Space</strong> reveals the answer.
+                  <strong>1</strong>, <strong>2</strong>, <strong>3</strong>,
+                  <strong>4</strong> rate the card.
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel panel-insights hidden" data-view-panel="progress">
+          <div class="panel-head">
+            <div>
+              <p class="kicker">Insights</p>
+              <h2>Progress</h2>
+            </div>
+          </div>
+
+          <div class="panel-switcher">
+            <button
+              id="progressMenuToggleBtn"
+              class="panel-switcher-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="progressMenuNav"
+            >
+              <span class="panel-switcher-copy">
+                <span class="panel-switcher-label">Progress sections</span>
+                <strong id="progressMenuSummary">Snapshot</strong>
+              </span>
+              <span class="panel-switcher-icon">+</span>
+            </button>
+            <nav id="progressMenuNav" class="panel-subnav" aria-label="Progress categories">
+              <button class="panel-subtab is-active" type="button" data-progress-target="snapshot">
+                <span class="panel-subtab-label">Snapshot</span>
+                <span class="panel-subtab-meta">Goals, streaks, and deck momentum.</span>
+              </button>
+              <button class="panel-subtab" type="button" data-progress-target="sync">
+                <span class="panel-subtab-label">Sync & backup</span>
+                <span class="panel-subtab-meta">Account sync, exports, and recovery.</span>
+              </button>
+              <button class="panel-subtab" type="button" data-progress-target="reviews">
+                <span class="panel-subtab-label">Review log</span>
+                <span class="panel-subtab-meta">Weak spots and recent repetition history.</span>
+              </button>
+            </nav>
+          </div>
+
+          <div class="panel-subsection" data-progress-panel="snapshot">
+            <div class="insight-cards">
+              <article class="mini-panel">
+                <p class="mini-label">Daily goal</p>
+                <strong id="dailyGoalText">12 cards</strong>
+              </article>
+              <article class="mini-panel">
+                <p class="mini-label">Average ease</p>
+                <strong id="averageEaseText">2.50</strong>
+              </article>
+              <article class="mini-panel">
+                <p class="mini-label">Next due</p>
+                <strong id="nextDueText">Ready now</strong>
+              </article>
+            </div>
+
+            <form id="goalForm" class="settings-form">
+              <label class="field compact-field">
+                <span>Daily goal</span>
+                <input id="dailyGoalInput" type="number" min="1" max="100" step="1" />
+              </label>
+              <button class="button button-secondary" type="submit">
+                Update goal
+              </button>
+              <p id="goalStatusText" class="settings-note">
+                0 of 12 reviews completed today.
+              </p>
+            </form>
+
+            <div class="insight-section">
+              <div class="section-head">
+                <h3>Deck momentum</h3>
+                <p>Progress by deck, due load, and mastered coverage.</p>
+              </div>
+              <div id="progressBars" class="progress-bars"></div>
+            </div>
+          </div>
+
+          <div class="panel-subsection hidden" data-progress-panel="sync">
+            <div class="insight-section">
+              <div class="section-head">
+                <div>
+                  <h3>Data tools</h3>
+                  <p>Keep the library portable with exports, CSV workflows, and recovery tools.</p>
+                </div>
+              </div>
+
+              <div class="toolbar-actions progress-tools">
+              <button id="importJsonBtn" class="button button-ghost">Import JSON</button>
+              <button id="exportJsonBtn" class="button button-ghost">Export JSON</button>
+              <button id="importCsvBtn" class="button button-ghost">Import CSV</button>
+              <button id="exportCsvBtn" class="button button-ghost">Export CSV</button>
+              <button id="importSyncBtn" class="button button-ghost">Merge sync</button>
+              <button id="exportSyncBtn" class="button button-ghost">Export sync</button>
+              <button id="resetBtn" class="button button-ghost danger-button">
+                Reset progress
+              </button>
+            </div>
+              <p id="dataStatusText" class="settings-note">
+                JSON backups preserve full progress. CSV is for bulk card content.
+              </p>
+              <p id="syncStatusText" class="settings-note">
+                Sync packets let you merge this library onto another device without a backend.
+              </p>
+            </div>
+
+            <div class="insight-section">
+              <div class="section-head">
+                <h3>Account sync</h3>
+                <p>Sign in to move decks and progress across devices with a real backend.</p>
+              </div>
+
+              <div id="authLoggedOut" class="auth-grid">
+                <label class="field">
+                  <span>Email</span>
+                  <input id="authEmailInput" type="email" autocomplete="email" placeholder="you@example.com" />
+                </label>
+                <label class="field">
+                  <span>Password</span>
+                  <input
+                    id="authPasswordInput"
+                    type="password"
+                    autocomplete="current-password"
+                    placeholder="At least 8 characters"
+                  />
+                </label>
+                <label class="field">
+                  <span>Device name</span>
+                  <input id="deviceNameInput" type="text" placeholder="MacBook Air" />
+                </label>
+                <div class="auth-actions">
+                  <button id="registerBtn" class="button button-primary" type="button">
+                    Create account
+                  </button>
+                  <button id="loginBtn" class="button button-secondary" type="button">
+                    Sign in
+                  </button>
+                </div>
+              </div>
+
+              <div id="authLoggedIn" class="account-stack hidden">
+                <div class="account-panel">
+                  <div>
+                    <p class="mini-label">Signed in as</p>
+                    <strong id="accountEmailText">you@example.com</strong>
+                    <p id="accountMetaText" class="settings-note">
+                      Server-backed sync is ready.
+                    </p>
+                  </div>
+                  <div class="auth-actions">
+                    <button id="syncNowBtn" class="button button-primary" type="button">
+                      Sync now
+                    </button>
+                    <button id="pullServerBtn" class="button button-secondary" type="button">
+                      Pull server copy
+                    </button>
+                    <button id="logoutBtn" class="button button-ghost" type="button">
+                      Log out
+                    </button>
+                  </div>
+                </div>
+
+                <div class="security-grid">
+                  <form id="passwordForm" class="security-card">
+                    <div class="section-head">
+                      <div>
+                        <h3>Security</h3>
+                        <p>Change your password and keep this device signed in.</p>
+                      </div>
+                    </div>
+
+                    <label class="field">
+                      <span>Current password</span>
+                      <input
+                        id="currentPasswordInput"
+                        type="password"
+                        autocomplete="current-password"
+                        placeholder="Current password"
+                      />
+                    </label>
+
+                    <label class="field">
+                      <span>New password</span>
+                      <input
+                        id="newPasswordInput"
+                        type="password"
+                        autocomplete="new-password"
+                        placeholder="At least 8 characters"
+                      />
+                    </label>
+
+                    <div class="auth-actions">
+                      <button id="changePasswordBtn" class="button button-secondary" type="submit">
+                        Update password
+                      </button>
+                    </div>
+
+                    <p id="passwordStatusText" class="settings-note">
+                      Changing your password signs out your other devices.
+                    </p>
+                  </form>
+
+                  <div class="security-card">
+                    <div class="section-head">
+                      <div>
+                        <h3>Devices</h3>
+                        <p>Review every active session tied to this account.</p>
+                      </div>
+                      <button id="refreshSessionsBtn" class="button button-ghost" type="button">
+                        Refresh devices
+                      </button>
+                    </div>
+
+                    <div id="sessionList" class="session-list"></div>
+                    <p id="sessionStatusText" class="settings-note">
+                      Active devices will appear here after sign-in.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <p id="authStatusText" class="settings-note">
+                Sign in to enable backend sync. The file-based sync buttons still work as a fallback.
+              </p>
+            </div>
+          </div>
+
+          <div class="panel-subsection hidden" data-progress-panel="reviews">
+            <div class="insight-section">
+              <div class="section-head">
+                <h3>Weak spots</h3>
+                <p>Tags and cards that need extra attention.</p>
+              </div>
+              <div id="weakSpotList" class="token-list"></div>
+            </div>
+
+            <div class="insight-section">
+              <div class="section-head">
+                <h3>Recent reviews</h3>
+                <p>Your latest repetition trail.</p>
+              </div>
+              <div id="activityList" class="activity-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel-studio hidden" data-view-panel="studio">
+          <div class="panel-head">
+            <div>
+              <p class="kicker">Studio</p>
+              <h2>Create decks and cards</h2>
+            </div>
+          </div>
+
+          <div class="panel-switcher">
+            <button
+              id="studioMenuToggleBtn"
+              class="panel-switcher-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="studioMenuNav"
+            >
+              <span class="panel-switcher-copy">
+                <span class="panel-switcher-label">Studio sections</span>
+                <strong id="studioMenuSummary">Card builder</strong>
+              </span>
+              <span class="panel-switcher-icon">+</span>
+            </button>
+            <nav id="studioMenuNav" class="panel-subnav" aria-label="Studio categories">
+              <button class="panel-subtab is-active" type="button" data-studio-target="cards">
+                <span class="panel-subtab-label">Card builder</span>
+                <span class="panel-subtab-meta">Add vocabulary, examples, and grammar forms.</span>
+              </button>
+              <button class="panel-subtab" type="button" data-studio-target="decks">
+                <span class="panel-subtab-label">Deck settings</span>
+                <span class="panel-subtab-meta">Organize topics, levels, and deck descriptions.</span>
+              </button>
+              <button class="panel-subtab" type="button" data-studio-target="manage">
+                <span class="panel-subtab-label">Collection manager</span>
+                <span class="panel-subtab-meta">Search, edit, and reset cards in one place.</span>
+              </button>
+            </nav>
+          </div>
+
+          <div class="panel-subsection" data-studio-panel="cards">
+            <div class="composer-grid">
+              <article class="composer-card">
+                <div class="composer-card-head">
+                  <p class="mini-label">Card builder</p>
+                  <h3>Build cards in a focused sheet</h3>
+                </div>
+                <p class="composer-copy">
+                  Open a clean editor for nouns, verbs, adjectives, or phrases without pushing the
+                  whole page downward.
+                </p>
+                <div class="deck-tags">
+                  <span class="pill">Articles</span>
+                  <span class="pill">Tense snapshots</span>
+                  <span class="pill">Examples</span>
+                  <span class="pill">Grammar notes</span>
+                </div>
+                <div class="composer-actions">
+                  <button id="openCardSheetBtn" class="button button-primary" type="button">
+                    New card
+                  </button>
+                  <button id="jumpManagerBtn" class="button button-ghost" type="button">
+                    Open manager
+                  </button>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div class="panel-subsection hidden" data-studio-panel="decks">
+            <div class="composer-grid">
+              <article class="composer-card">
+                <div class="composer-card-head">
+                  <p class="mini-label">Deck settings</p>
+                  <h3>Define a topic without leaving the flow</h3>
+                </div>
+                <p class="composer-copy">
+                  Create or edit deck framing in a separate sheet, then jump back into review or collection work.
+                </p>
+                <div class="deck-tags">
+                  <span class="pill">Levels</span>
+                  <span class="pill">Focus areas</span>
+                  <span class="pill">Descriptions</span>
+                </div>
+                <div class="composer-actions">
+                  <button id="openDeckSheetBtn" class="button button-primary" type="button">
+                    New deck
+                  </button>
+                  <button id="jumpManagerFromDecksBtn" class="button button-ghost" type="button">
+                    Open manager
+                  </button>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div class="panel-subsection hidden" data-studio-panel="manage">
+            <div class="manager-toolbar">
+              <div class="toolbar-actions">
+                <button id="openCardSheetFromManagerBtn" class="button button-primary" type="button">
+                  New card
+                </button>
+                <button id="openDeckSheetFromManagerBtn" class="button button-ghost" type="button">
+                  New deck
+                </button>
+              </div>
+              <label class="field compact-field">
+                <span>Search cards</span>
+                <input id="managerSearchInput" type="search" placeholder="term, translation, tag..." />
+              </label>
+              <label class="field compact-field">
+                <span>Show</span>
+                <select id="managerFilter">
+                  <option value="all">All cards</option>
+                  <option value="due">Due now</option>
+                  <option value="new">New</option>
+                  <option value="learning">Learning</option>
+                  <option value="mastered">Mastered</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="manager-panel">
+              <div class="section-head">
+                <div>
+                  <h3>Collection manager</h3>
+                  <p>Edit the selected deck, tune cards, and reset trouble spots.</p>
+                </div>
+              </div>
+              <p class="manager-swipe-note">On mobile, swipe a card left to reveal edit, reset, and delete actions.</p>
+
+              <div id="selectedDeckPanel" class="selected-deck-panel"></div>
+              <div id="managedCardList" class="managed-card-list"></div>
+            </div>
+          </div>
+        </section>
+        </main>
+
+        <footer class="footer">
+          Local-first study with optional cloud sync, installable web app support,
+          and fast access to every section from the menu.
+        </footer>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Quick sections">
+      <button class="bottom-nav-button is-active" type="button" data-view-target="library">
+        <span class="bottom-nav-label">Library</span>
+      </button>
+      <button class="bottom-nav-button" type="button" data-view-target="study">
+        <span class="bottom-nav-label">Study</span>
+      </button>
+      <button class="bottom-nav-button" type="button" data-view-target="progress">
+        <span class="bottom-nav-label">Progress</span>
+      </button>
+      <button class="bottom-nav-button" type="button" data-view-target="studio">
+        <span class="bottom-nav-label">Studio</span>
+      </button>
+    </nav>
+
+    <div id="sheetOverlay" class="sheet-overlay hidden">
+      <div id="sheetBackdrop" class="sheet-backdrop"></div>
+      <section
+        id="sheetCardPanel"
+        class="sheet-panel hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cardFormTitle"
+      >
+        <div class="sheet-head">
+          <div class="sheet-head-copy">
+            <p class="mini-label">Card sheet</p>
+          </div>
+          <button class="sheet-close" id="closeCardSheetBtn" type="button" aria-label="Close card editor">
+            Close
+          </button>
+        </div>
+        <form id="cardForm" class="studio-form sheet-form">
+          <div class="form-title-wrap">
+            <h3 id="cardFormTitle">New card</h3>
+            <p id="cardFormIntro">
+              Add your own nouns, verbs, adjectives, examples, and notes.
+            </p>
+          </div>
+
+          <label class="field">
+            <span>Deck</span>
+            <select id="cardDeckSelect"></select>
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Card type</span>
+              <select id="cardPartOfSpeech">
+                <option value="noun">Noun</option>
+                <option value="verb">Verb</option>
+                <option value="adjective">Adjective</option>
+                <option value="phrase">Phrase</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Level</span>
+              <select id="cardLevel">
+                <option value="A1">A1</option>
+                <option value="A2">A2</option>
+                <option value="B1">B1</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span>German term</span>
+              <input id="cardTerm" type="text" placeholder="die Rechnung" required />
+            </label>
+
+            <label class="field">
+              <span>English meaning</span>
+              <input id="cardTranslation" type="text" placeholder="bill, invoice" required />
+            </label>
+          </div>
+
+          <div id="nounFields" class="variant-fields">
+            <div class="field-row">
+              <label class="field">
+                <span>Article</span>
+                <input id="cardArticle" type="text" placeholder="die" />
+              </label>
+
+              <label class="field">
+                <span>Plural</span>
+                <input id="cardPlural" type="text" placeholder="die Rechnungen" />
+              </label>
+            </div>
+          </div>
+
+          <div id="verbFields" class="variant-fields hidden">
+            <div class="variant-head">
+              <h4>Tense snapshots</h4>
+              <p>Capture the forms learners usually memorize together for German verbs.</p>
+            </div>
+
+            <div class="field-row">
+              <label class="field">
+                <span>Auxiliary</span>
+                <select id="cardVerbAuxiliary">
+                  <option value="">Select</option>
+                  <option value="haben">haben</option>
+                  <option value="sein">sein</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Present 3rd singular</span>
+                <input id="cardVerbPresent" type="text" placeholder="er/sie/es geht" />
+              </label>
+
+              <label class="field">
+                <span>Simple past</span>
+                <input id="cardVerbPreterite" type="text" placeholder="ging" />
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label class="field">
+                <span>Past participle</span>
+                <input id="cardVerbParticiple" type="text" placeholder="gegangen" />
+              </label>
+
+              <label class="field">
+                <span>Imperative</span>
+                <input id="cardVerbImperative" type="text" placeholder="geh!" />
+              </label>
+
+              <label class="field">
+                <span>Pattern / case</span>
+                <input id="cardUsagePattern" type="text" placeholder="warten auf + Akk" />
+              </label>
+            </div>
+          </div>
+
+          <div id="adjectiveFields" class="variant-fields hidden">
+            <div class="variant-head">
+              <h4>Adjective forms</h4>
+              <p>Save the forms and usage hints that matter most in comparison drills.</p>
+            </div>
+
+            <label class="field">
+              <span>Comparative</span>
+              <input id="cardAdjectiveComparative" type="text" placeholder="wichtiger" />
+            </label>
+
+            <label class="field">
+              <span>Superlative</span>
+              <input id="cardAdjectiveSuperlative" type="text" placeholder="am wichtigsten" />
+            </label>
+
+            <label class="field">
+              <span>Usage pattern</span>
+              <input id="cardAdjectiveUsage" type="text" placeholder="wichtig für + Akk" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Example sentence</span>
+            <textarea
+              id="cardExample"
+              rows="3"
+              placeholder="Kann ich bitte die Rechnung haben?"
+            ></textarea>
+          </label>
+
+          <label class="field">
+            <span>Example translation</span>
+            <input
+              id="cardExampleTranslation"
+              type="text"
+              placeholder="Could I have the bill, please?"
+            />
+          </label>
+
+          <label class="field">
+            <span>Grammar note</span>
+            <textarea
+              id="cardNote"
+              rows="3"
+              placeholder="Often used with bitte in restaurants."
+            ></textarea>
+          </label>
+
+          <label class="field">
+            <span>Tags</span>
+            <input id="cardTags" type="text" placeholder="restaurant, polite, noun" />
+          </label>
+
+          <div class="studio-actions">
+            <button id="cardSubmitBtn" class="button button-primary" type="submit">
+              Save card
+            </button>
+            <button id="cardCancelBtn" class="button button-ghost hidden" type="button">
+              Cancel edit
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section
+        id="sheetDeckPanel"
+        class="sheet-panel hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="deckFormTitle"
+      >
+        <div class="sheet-head">
+          <div class="sheet-head-copy">
+            <p class="mini-label">Deck sheet</p>
+          </div>
+          <button class="sheet-close" id="closeDeckSheetBtn" type="button" aria-label="Close deck editor">
+            Close
+          </button>
+        </div>
+        <form id="deckForm" class="studio-form sheet-form">
+          <div class="form-title-wrap">
+            <h3 id="deckFormTitle">New deck</h3>
+            <p id="deckFormIntro">
+              Organize vocabulary by topic, level, or real-life context.
+            </p>
+          </div>
+
+          <label class="field">
+            <span>Deck name</span>
+            <input id="deckName" type="text" placeholder="Berlin errands" required />
+          </label>
+
+          <label class="field">
+            <span>Level</span>
+            <select id="deckLevel">
+              <option value="A1">A1</option>
+              <option value="A2">A2</option>
+              <option value="B1">B1</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Focus</span>
+            <input id="deckFocus" type="text" placeholder="transport, shopping, forms" />
+          </label>
+
+          <label class="field">
+            <span>Description</span>
+            <textarea
+              id="deckDescription"
+              rows="4"
+              placeholder="What situations does this deck support?"
+            ></textarea>
+          </label>
+
+          <div class="studio-actions">
+            <button id="deckSubmitBtn" class="button button-primary" type="submit">
+              Create deck
+            </button>
+            <button id="deckCancelBtn" class="button button-ghost hidden" type="button">
+              Cancel edit
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <input id="importInput" type="file" accept="application/json" hidden />
+    <input id="csvImportInput" type="file" accept=".csv,text/csv" hidden />
+    <input id="syncImportInput" type="file" accept="application/json" hidden />
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
